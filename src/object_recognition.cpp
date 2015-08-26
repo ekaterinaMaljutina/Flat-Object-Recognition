@@ -10,8 +10,6 @@
 
 using namespace cv;
 
-Scalar Green(0, 255, 0);
-
 const char* params =
      "{ h | help          | false | print usage                                   }"
      "{   | sample-list   |       | path to list with image classes names         }"
@@ -19,7 +17,7 @@ const char* params =
      "{   | image         |       | image to detect objects on                    }"
      "{   | camera        | false | whether to detect on video stream from camera }";
 
-void DrawContours(const Mat image, Mat& test_image, const Mat homography ) {
+void DrawContours(const Mat image, Mat& test_image, const Mat homography, const Scalar color ) {
 	std::vector<Point2f> startcorners, newcorners;
 	std::vector<float> distances;
 	Point2f leftup( 0, 0);
@@ -38,10 +36,10 @@ void DrawContours(const Mat image, Mat& test_image, const Mat homography ) {
 		distances.push_back(pow(newcorners[3].x-newcorners[0].x, 2) + pow(newcorners[3].y-newcorners[0].y, 2));
 	}
 	if ( distances[0]>100 && distances[1]>100 && distances[2]>100 && distances[3]>100) {
-	    line(test_image, Point2f(newcorners[0].x, newcorners[0].y), Point2f(newcorners[1].x, newcorners[1].y), Green, 4);
-	    line(test_image, Point2f(newcorners[1].x, newcorners[1].y), Point2f(newcorners[2].x, newcorners[2].y), Green, 4);
-	    line(test_image, Point2f(newcorners[2].x, newcorners[2].y), Point2f(newcorners[3].x, newcorners[3].y), Green, 4);
-	    line(test_image, Point2f(newcorners[3].x, newcorners[3].y), Point2f(newcorners[0].x, newcorners[0].y), Green, 4);
+	    line(test_image, Point2f(newcorners[0].x, newcorners[0].y), Point2f(newcorners[1].x, newcorners[1].y), color, 4);
+	    line(test_image, Point2f(newcorners[1].x, newcorners[1].y), Point2f(newcorners[2].x, newcorners[2].y), color, 4);
+	    line(test_image, Point2f(newcorners[2].x, newcorners[2].y), Point2f(newcorners[3].x, newcorners[3].y), color, 4);
+	    line(test_image, Point2f(newcorners[3].x, newcorners[3].y), Point2f(newcorners[0].x, newcorners[0].y), color, 4);
 	}
 	
 }
@@ -98,7 +96,7 @@ Mat Descriptor(const Mat image, Mat test_image)
 	drawMatches(image, keypoints_object,test_image, keypoint_test, inliers,img_matches_a);
 	Mat final_test_image;
 	test_image.copyTo(final_test_image);
-	DrawContours(image, test_image, H);
+	DrawContours(image, test_image, H, Scalar(0,255,0));
 
 	return test_image;
 }
