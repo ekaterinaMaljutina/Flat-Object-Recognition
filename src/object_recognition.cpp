@@ -6,10 +6,12 @@
 
 #include <fstream>
 #include <iostream>
+
 #include "ctime"
 #include "featureExtractor.hpp"
 
 using namespace cv;
+using namespace std;
 
 
 #if 1
@@ -26,7 +28,10 @@ const char* params =
      "{   | sample-list   |       | path to list with image classes names         }"
      "{   | samples       |       | path to samples                               }"
      "{   | image         |       | image to detect objects on                    }"
-     "{   | camera        | false | whether to detect on video stream from camera }";
+     "{   | camera        | false | whether to detect on video stream from camera }"
+	 "{   | new-class-object  | false | flag for add new class object             }"
+	 "{   | new-image     |       | add new object                                }"
+	 "{   | new-class-image|      | add new class object                          }";
 
 
 void subscribeObject(Mat& image, string name, Point2f leftCornerCoord)
@@ -73,10 +78,7 @@ void DrawContours(const Mat image, Mat& test_image, const Mat homography, Scalar
 		
 		subscribeObject(test_image, objectName, newcorners[0]);
 
-	}
-
-    
-	
+	}	
 }
 
 
@@ -125,14 +127,34 @@ void inliers(vector< DMatch > matches, Mat &scene_corners,featureExtractor &test
 	}
 }
 
+void Add_Class(string path_to_image, string name_class, string sampleListFile,string path)
+{
+	std::ofstream   sampleListFileReader(sampleListFile,std::ofstream::app);
+	Mat image = imread(path_to_image);
+	imwrite(path + "\data\12.jpg",image); 
+	string str = "/data/12.jpg " + name_class +"\n" ; 
+	sampleListFileReader << str;
+	sampleListFileReader.close();
+
+}
+
 int main(int argc, const char **argv)
 { 
 	vector<SurfDescriptorExtractor> detector;
 	Mat image, test_image;
     CommandLineParser parser(argc, argv, params);
-    string sampleListFile = parser.get<string>("sample-list");
+	
+	string sampleListFile = parser.get<string>("sample-list");
 	string testImage = parser.get<string>("image");
 	string _path = parser.get<string>("samples");
+
+	bool add_new_class = parser.get<bool>("new-class-object");
+	if (add_new_class)
+	{
+		Add_Class( parser.get<string>("new-image") , parser.get<string>("new-class-image") , sampleListFile,_path);
+		
+	}
+    
     std::ifstream sampleListFileReader(sampleListFile);
     char buff[50];
 	test_image = imread(testImage);
@@ -148,30 +170,30 @@ int main(int argc, const char **argv)
 	compute(test_image,test);
 
 	Mat H,
-		scene;
+		scene,
+		img;
 
 	vector< DMatch > matcher, inlier;
-
-
-	Mat img;
 	string str;
+
     while (sampleListFileReader.getline(buff, 50))
     {
         str = (string) buff;
         string image_file = str.substr(0,str.find(" "));
 		image = imread(_path + image_file);
 		compute(image,tmp);
-		//matcher = matches(tmp, test);
+		matcher = matches(tmp, test);
 		scene = Homography(	matches(tmp, test), tmp, test, 3.0, H);
-		//inliers(matcher,scene,test,3.0,inlier);
-
+		inliers(matcher,scene,test,3.0,inlier);
+		//drawMatches(image, tmp.GetKeyPoint(),test_image, test.GetKeyPoint(),inlier,img);
+		
+		//waitKey();
 		str = str.substr(str.find(" "), str.length()-1);
-
 		DrawContours(image, test_image, H, Scalar(0,255,0), str);	
     }
-
+//	drawMatches(image, tmp.GetKeyPoint(),test_image, test.GetKeyPoint(),inlier,img);
+    //imshow("image_matches",img);
 	TE();
-
 	imshow("image",test_image);
 	waitKey();
     return 0;
