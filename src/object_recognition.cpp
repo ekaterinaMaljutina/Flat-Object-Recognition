@@ -35,6 +35,23 @@ const char* params =
 	 "{   | new-class-image  |       | add new class object                          }";
 
 
+
+bool onSameSide(Point2f p1, Point2f p2, Point2f p3, Point2f p4) {
+	float k =0;
+	if (p1.x!=p2.x) k = (p1.y-p2.y)/(p1.x-p2.x); else k = (p1.y-p2.y)/(p1.x-p2.x+0.0001);
+	float b = p1.y - k*p1.x;
+	if (((p3.y-k*p3.x-b)>0 && (p4.y-k*p4.x-b)>0) || ((p3.y-k*p3.x-b)<0 && (p4.y-k*p4.x-b)<0)) return true; else return false;
+}
+
+bool isConvex(Point2f p0, Point2f p1, Point2f p2, Point2f p3) {	
+	if ( onSameSide(p0, p1, p2, p3) && 
+		onSameSide(p1, p2, p3, p0) && 
+		onSameSide(p2, p3, p0, p1) && 
+		onSameSide(p3, p0, p1, p2)
+		) return true; else return false;
+	
+}
+
 void subscribeObject(Mat& image, string name, Point2f leftCornerCoord)
 {    
     Point2f textCoord(leftCornerCoord.x, leftCornerCoord.y + 25);
@@ -71,7 +88,8 @@ void DrawContours(const Mat image, Mat& test_image, const Mat homography, Scalar
 
 	float areaOrig = fourPointsArea(startcorners[0], startcorners[1], startcorners[2], startcorners[3]);
 	float areaFound = fourPointsArea(newcorners[0], newcorners[1], newcorners[2], newcorners[3]);
-	if (areaFound/areaOrig>0.2) {
+	if (areaFound/areaOrig>0.2 && isConvex(newcorners[0], newcorners[1], newcorners[2], newcorners[3]))
+	{
 	    line(test_image, Point2f(newcorners[0].x, newcorners[0].y), Point2f(newcorners[1].x, newcorners[1].y), color, 4);
 	    line(test_image, Point2f(newcorners[1].x, newcorners[1].y), Point2f(newcorners[2].x, newcorners[2].y), color, 4);
 	    line(test_image, Point2f(newcorners[2].x, newcorners[2].y), Point2f(newcorners[3].x, newcorners[3].y), color, 4);
@@ -167,7 +185,7 @@ int main(int argc, const char **argv)
 			{
 				//imshow("image",frame);
 				//waitKey();
-
+				TS();
 				compute(frame,test);
 				//matcher = matches(tmp, test);
 				//drawMatches(object, tmp.GetKeyPoint(),frame, test.GetKeyPoint(),inlier,image);
@@ -181,11 +199,12 @@ int main(int argc, const char **argv)
 				//drawMatches(object, tmp.GetKeyPoint(),frame, test.GetKeyPoint(),inlier,image);
 				//imshow("matches",image);
 				//waitKey();
-
+				TE();
 				DrawContours(object, frame, H, Scalar(0,255,0), "our_object");
 				imshow("image",frame);
 				if(waitKey(27) >= 0) break;
 			}
+			
 		}
 		return 1;
 	}
