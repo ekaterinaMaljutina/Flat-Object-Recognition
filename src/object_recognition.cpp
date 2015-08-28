@@ -24,14 +24,15 @@ using namespace std;
 #endif
 
 const char* params =
-     "{ h | help          | false | print usage                                   }"
-     "{   | sample-list   |       | path to list with image classes names         }"
-     "{   | samples       |       | path to samples                               }"
-     "{   | image         |       | image to detect objects on                    }"
-     "{   | camera        | false | whether to detect on video stream from camera }"
-	 "{   | new-class-object  | false | flag for add new class object             }"
-	 "{   | new-image     |       | add new object                                }"
-	 "{   | new-class-image|      | add new class object                          }";
+     "{ h | help             | false | print usage                                   }"
+     "{   | sample-list      |       | path to list with image classes names         }"
+     "{   | samples          |       | path to samples                               }"
+     "{   | image            |       | image to detect objects on                    }"
+     "{   | camera           | false | whether to detect on video stream from camera }"
+	 "{   | object-to-camera |       | object from camera                            }"
+	 "{   | new-class-object | false | flag for add new class object                 }"
+	 "{   | new-image        |       | add new object                                }"
+	 "{   | new-class-image  |       | add new class object                          }";
 
 
 void subscribeObject(Mat& image, string name, Point2f leftCornerCoord)
@@ -147,6 +148,47 @@ int main(int argc, const char **argv)
 	string sampleListFile = parser.get<string>("sample-list");
 	string testImage = parser.get<string>("image");
 	string _path = parser.get<string>("samples");
+
+	bool use_camera = parser.get<bool>("camera");
+
+	if (use_camera)
+	{
+		VideoCapture cap(0);
+		Mat frame, scene,H;
+
+		featureExtractor test, tmp;
+		vector< DMatch > matcher, inlier;
+		Mat object = imread( parser.get<string>("object-to-camera"));
+		compute(object,tmp);
+		while (true)
+		{
+			cap.read(frame);
+			if (!frame.empty())
+			{
+				//imshow("image",frame);
+				//waitKey();
+
+				compute(frame,test);
+				//matcher = matches(tmp, test);
+				//drawMatches(object, tmp.GetKeyPoint(),frame, test.GetKeyPoint(),inlier,image);
+				//imshow("matches",image);
+				//waitKey();
+
+				scene = Homography(	matches(tmp, test), tmp, test, 3.0, H);
+
+				//inliers(matcher,scene,test,3.0,inlier);
+
+				//drawMatches(object, tmp.GetKeyPoint(),frame, test.GetKeyPoint(),inlier,image);
+				//imshow("matches",image);
+				//waitKey();
+
+				DrawContours(object, frame, H, Scalar(0,255,0), "our_object");
+				imshow("image",frame);
+				if(waitKey(27) >= 0) break;
+			}
+		}
+		return 1;
+	}
 
 	bool add_new_class = parser.get<bool>("new-class-object");
 	if (add_new_class)
